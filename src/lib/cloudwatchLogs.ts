@@ -10,3 +10,12 @@ export const unzipLogdata = async (
     })
   })
 }
+
+/**
+ * Constructs a URL that can be used to link to a log stream
+ */
+export const getLogStreamConsoleUrl = (log: AWSLambda.CloudWatchLogsDecodedData): string => {
+  const encodedLogGroup = encodeURIComponent(encodeURIComponent(log.logGroup)).replaceAll('%', '$')
+  const encodedLogStream = encodeURIComponent(encodeURIComponent(log.logStream)).replaceAll('%', '$')
+  return `https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups/log-group/${encodedLogGroup}/log-events/${encodedLogStream}`
+}

@@ -3,7 +3,7 @@
   "display": "Node 20",
 
   "compilerOptions": {
-    "lib": ["es2020"],
+    "lib": ["es2020", "es2021"],
     "module": "es2022",
     "target": "es2020",
 
