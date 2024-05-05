@@ -46,7 +46,7 @@ Resources:
       - LogSubscriberLogGroup
     Properties:
       PolicyName: !Sub account-subscriptionfilter-policy-${ENVIRONMENT}
-      PolicyDocument: !Sub "{\"DestinationArn\":\"${LogSubscriberLambda.Arn}\", \"FilterPattern\": \"error\", \"Distribution\": \"Random\"}"
+      PolicyDocument: !Sub "{\"DestinationArn\":\"${LogSubscriberLambda.Arn}\", \"FilterPattern\": \"?ERROR ?error ?fatal\", \"Distribution\": \"Random\"}"
       SelectionCriteria: !Sub "LogGroupName NOT IN [\"/aws/lambda/${LogSubscriberLambda}\"]"
       PolicyType: "SUBSCRIPTION_FILTER_POLICY"
       Scope: "ALL"
