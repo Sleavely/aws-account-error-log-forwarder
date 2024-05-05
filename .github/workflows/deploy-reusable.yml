@@ -32,18 +32,6 @@ jobs:
           role-to-assume: arn:aws:iam::484537476580:role/github-oidc-Role-11HTWA6AOKQLC
           aws-region: eu-west-1
 
-      - name: Set env_vars from workflow input and secrets
-        run: |
-          for i in "${{ inputs.env_vars }}"
-          do
-            printf "%s\n" $i >> $GITHUB_ENV
-          done
-
-          for i in "${{ secrets.env_vars }}"
-          do
-            printf "%s\n" $i >> $GITHUB_ENV
-          done
-
       - name: Set COMMIT_HASH from git
         run: |
           echo COMMIT_HASH=$GITHUB_SHA >> $GITHUB_ENV
@@ -66,6 +54,18 @@ jobs:
 
       - name: Substitute env in Cloudformation template
         run: |
+          # temporarily expose secrets as environment variables
+          # (if we print to GITHUB_ENV it will persist)
+          for i in "${{ inputs.env_vars }}"
+          do
+            printf "export %s\n" $i >> .envsub
+          done
+
+          for i in "${{ secrets.env_vars }}"
+          do
+            printf "export %s\n" $i >> .envsub
+          done
+          source .envsub
           npx envsub@4.1.0 -p -s dollar-basic cloudformation.yml cloudformation.yml
 
       - name: Prepare source package
