@@ -2,7 +2,7 @@
   "name": "@cloudbourn/aws-account-error-log-forwarder",
   "version": "1.0.0",
   "private": true,
-  "description": "An account-level subscription filter that forward matching logs to an external service.",
+  "description": "An account-level subscription filter that forwards matching logs to an external service.",
   "main": "index.js",
   "scripts": {
     "build": "rm -rf dist/ && npx esbuild --format=cjs --sourcemap --outdir=dist/src/ `find src/ -name '*.js' -o -name '*.ts' ! -name '*.test.*' ! -name '*.spec.*' ! -name '*.fixture*'`",
