@@ -12,12 +12,12 @@ const extractLogEventMessage = (input: string): string => {
     const rightOfNativeLevel = input.replace(/^.*?\t(INFO|WARN(ING)?|ERROR)\t/, '').trim()
     try {
       // If the app printed JSON data we format it
-      return JSON.stringify(JSON.parse(rightOfNativeLevel), null, 2)
+      return '```json\n' + JSON.stringify(JSON.parse(rightOfNativeLevel), null, 2) + '\n```'
     } catch (err) {
-      return rightOfNativeLevel
+      return '```\n' + rightOfNativeLevel + '\n```'
     }
   } catch (err) {
-    return input
+    return '```\n' + input + '\n```'
   }
 }
 
@@ -26,9 +26,9 @@ export const handler = async (event: AWSLambda.CloudWatchLogsEvent): Promise<voi
 
   await log.logEvents.reduce(async (previousPromise, logEvent) => {
     await previousPromise
-    const logMessage = extractLogEventMessage(logEvent.message)
+    const messageMarkdown = extractLogEventMessage(logEvent.message)
 
-    const content = `\`\`\`\n${logMessage}\n\`\`\`\n${getLogStreamConsoleUrl(log)}`
+    const content = `${messageMarkdown}\n${getLogStreamConsoleUrl(log)}`
     await discordWebhook(DISCORD_WEBHOOK_URL, {
       content,
     })
