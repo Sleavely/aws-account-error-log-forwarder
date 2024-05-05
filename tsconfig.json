@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Node 20",
+
+  "compilerOptions": {
+    "lib": ["es2020"],
+    "module": "es2022",
+    "target": "es2020",
+
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "declaration": true,
+    "outDir": "dist/src/"
+  },
+
+  "include": [
+    "src/"
+  ]
+}

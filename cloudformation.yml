@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  PROJECT:
+    Type: String
+    Default: $PROJECT
+  ENVIRONMENT:
+    Type: String
+    Default: $ENVIRONMENT
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 30
+    Handler: index.handler
+    Tracing: Active
+    Environment:
+      Variables:
+        ENVIRONMENT: !Sub ${ENVIRONMENT}
+        LOG_LEVEL: info
+        NODE_OPTIONS: --enable-source-maps
+        PROJECT: !Sub ${PROJECT}
+        # Values below are sourced from jobs.deploy.secrets.env_vars in ./.github/workflows/deploy.yaml
+        DISCORD_WEBHOOK_URL: $DISCORD_WEBHOOK_URL
+
+Resources:
+  LogSubscriberLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${PROJECT}-logSubscriber
+      CodeUri: dist/src/
+      Handler: logSubscriber.handler
+      Policies:
+        - AWSLambdaBasicExecutionRole
+
+  LogSubscriberLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${LogSubscriberLambda}
+      RetentionInDays: 7
+
+  AccountLogSubscriptionPolicy:
+    Type: AWS::Logs::AccountPolicy
+    DependsOn:
+      - LogSubscriberLogGroup
+    Properties:
+      PolicyName: !Sub account-subscriptionfilter-policy-${ENVIRONMENT}
+      PolicyDocument: !Sub "{\"DestinationArn\":\"${LogSubscriberLambda.Arn}\", \"FilterPattern\": \"error\", \"Distribution\": \"Random\"}"
+      SelectionCriteria: !Sub "LogGroupName NOT IN [\"/aws/lambda/${LogSubscriberLambda}\"]"
+      PolicyType: "SUBSCRIPTION_FILTER_POLICY"
+      Scope: "ALL"
+
+  AccountLogSubscriptionInvokePermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Sub ${LogSubscriberLambda.Arn}
+      Action: "lambda:InvokeFunction"
+      Principal: "logs.amazonaws.com"

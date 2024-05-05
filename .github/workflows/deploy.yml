@@ -1,0 +1,39 @@
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+
+name: Build and deploy
+
+on:
+  push:
+
+jobs:
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    container:
+      image: sleavely/node-awscli:20.x
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests
+      run: npm t
+
+  deploy:
+    name: Deploy
+    needs: tests
+
+    # enable OIDC
+    permissions:
+      id-token: write
+      contents: read
+
+    # reusable workflow params
+    uses: ./.github/workflows/deploy-reusable.yml
+    secrets:
+      env_vars: |
+        DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}
+    with:
+      environment: prod
+

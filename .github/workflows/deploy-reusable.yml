@@ -1,0 +1,102 @@
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      env_vars:
+        description: List of environment variables to set up, given in VARNAME=value format.
+        required: false
+        type: string
+    secrets:
+      env_vars:
+        required: false
+
+
+jobs:
+  deploy_to_env:
+    name: Deploy Cloudformation
+    runs-on: ubuntu-latest
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
+      NODE_ENV: production
+    container:
+      image: sleavely/node-awscli:20.x
+      options: --user 1001
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::484537476580:role/github-oidc-Role-11HTWA6AOKQLC
+          aws-region: eu-west-1
+
+      - name: Set env_vars from workflow input and secrets
+        run: |
+          for i in "${{ inputs.env_vars }}"
+          do
+            printf "%s\n" $i >> $GITHUB_ENV
+          done
+
+          for i in "${{ secrets.env_vars }}"
+          do
+            printf "%s\n" $i >> $GITHUB_ENV
+          done
+
+      - name: Set COMMIT_HASH from git
+        run: |
+          echo COMMIT_HASH=$GITHUB_SHA >> $GITHUB_ENV
+
+      - name: Seed PROJECT from package.json
+        run: |
+          echo PROJECT=$(cat package.json | jq -r .name | cut -d '/' -f 2) >> $GITHUB_ENV
+
+      - name: Set STACK_NAME
+        run: |
+          echo STACK_NAME=$PROJECT-$ENVIRONMENT >> $GITHUB_ENV
+
+      - name: Set STACK_TAGS
+        run: |
+          echo "STACK_TAGS=ENVIRONMENT=$ENVIRONMENT PROJECT=$PROJECT COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
+
+      - name: Set ARTIFACTS_BUCKET
+        run: |
+          echo ARTIFACTS_BUCKET=cloudbourn-deployments >> $GITHUB_ENV
+
+      - name: Substitute env in Cloudformation template
+        run: |
+          npx envsub@4.1.0 -p -s dollar-basic cloudformation.yml cloudformation.yml
+
+      - name: Prepare source package
+        run: |
+          mkdir dist
+          npm run build
+          cp package* dist/src/
+          cd dist/src/ && npm ci --ignore-scripts
+
+      - name: Package CloudFormation deployment
+        run: |
+          aws cloudformation package \
+            --template-file cloudformation.yml \
+            --output-template-file dist/cloudformation.dist.yml \
+            --s3-bucket $ARTIFACTS_BUCKET \
+            --s3-prefix $STACK_NAME
+
+      - name: Deploy Cloudformation
+        id: cloudformationDeploy
+        run: |
+          aws cloudformation deploy --template-file dist/cloudformation.dist.yml \
+            --stack-name $STACK_NAME \
+            --tags $STACK_TAGS \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+            --s3-bucket $ARTIFACTS_BUCKET \
+            --s3-prefix $STACK_NAME
+
+      - name: Print status reasons from most recent Cloudformation run
+        if: always() && (steps.cloudformationDeploy.outcome == 'failure')
+        run: |
+          aws cloudformation describe-stack-events \
+            --stack-name $STACK_NAME \
+            --query 'StackEvents[].ResourceStatusReason' \
+            | jq '.[0 : map(. == "User Initiated") | index(true)]'
