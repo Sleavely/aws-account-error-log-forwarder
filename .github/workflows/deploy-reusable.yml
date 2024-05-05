@@ -58,14 +58,13 @@ jobs:
           # (if we print to GITHUB_ENV it will persist)
           for i in "${{ inputs.env_vars }}"
           do
-            printf "export %s\n" $i >> .envsub
+            export $i
           done
 
           for i in "${{ secrets.env_vars }}"
           do
-            printf "export %s\n" $i >> .envsub
+            export $i
           done
-          source .envsub
           npx envsub@4.1.0 -p -s dollar-basic cloudformation.yml cloudformation.yml
 
       - name: Prepare source package
