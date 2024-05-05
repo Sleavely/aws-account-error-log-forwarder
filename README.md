@@ -20,3 +20,5 @@ An account-level subscription filter that forwards matching logs to an external 
 ## Examples
 
 ![Screenshot of a Discord message showing JSON-encoded log data and a link to the log stream it originated in](https://i.imgur.com/yY5GXR3.png)
+
+![Screenshot of a Discord message showing a log message that could not be parsed as JSON in its entirety](https://i.imgur.com/Ec0ier3.png)
