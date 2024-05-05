@@ -2,7 +2,7 @@
 
 An account-level subscription filter that forwards matching logs to an external service.
 
-[ ![CI status](https://github.com/Cloudbourn/scheduler-billing/actions/workflows/deploy.yml/badge.svg) ](https://github.com/Cloudbourn/scheduler-billing/actions/workflows/deploy.yml "View workflow")
+[ ![CI status](https://github.com/Cloudbourn/aws-account-error-log-forwarder/actions/workflows/deploy.yml/badge.svg) ](https://github.com/Cloudbourn/aws-account-error-log-forwarder/actions/workflows/deploy.yml "View workflow")
 
 ## Usage
 
